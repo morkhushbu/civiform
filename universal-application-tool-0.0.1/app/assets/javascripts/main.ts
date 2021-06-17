@@ -184,6 +184,47 @@ function filterOperators(event: Event) {
   });
 }
 
+function changePredicateValueType(event: Event) {
+  const operatorDropdown = event.target as HTMLSelectElement;
+  const valueType = operatorDropdown.options[operatorDropdown.options.selectedIndex].dataset.value;
+  console.log(valueType);
+
+  const valueInput =
+    operatorDropdown
+      .closest(".cf-predicate-options") // div containing all predicate builder dropdowns
+      .querySelector(".cf-value-input") // div containing the operator dropdown
+      .querySelector("input") as HTMLInputElement;
+
+  // Early exit if this is a dropdown (it is handled server-side)
+  if (valueInput.type.equals("select")) {
+    return;
+  }
+
+  switch (valueType) {
+    case "string":
+      valueInput.type = "text";
+      break;
+    case "date":
+      valueInput.type = "date";
+      break;
+    case "number":
+      valueInput.type = "number";
+      break;
+    case "depends_on_scalar": // Depends on scalar type
+      const selectedScalarType =
+        operatorDropdown
+          .closest(".cf-predicate-options") // div containing all predicate builder dropdowns
+          .querySelector(".cf-scalar-select") // div containing the operator dropdown
+          .querySelector("select").dataset.type;
+      if (selectedScalarType.equals("long")) {
+        valueInput.type = "number";
+      }
+      break;
+    default:
+      valueInput.type = "text";
+  }
+}
+
 window.addEventListener('load', (event) => {
   attachDropdown("create-question-button");
 
@@ -191,8 +232,13 @@ window.addEventListener('load', (event) => {
 
   // Configure the admin predicate builder to filter available operators based on
   // the type of scalar selected.
-  Array.from(document.querySelectorAll('.cf-scalar-select')).forEach(
+  Array.from(document.querySelectorAll(".cf-scalar-select")).forEach(
     el => el.addEventListener("input", filterOperators));
+
+  // Configure the admin predicate builder to change the value input type based on
+  // the type of operator selected.
+  Array.from(document.querySelectorAll(".cf-operator-select")).forEach(
+    el => el.addEventListener("input", changePredicateValueType));
 
   // Submit button is disabled by default until program block edit form is changed
   const blockEditForm = document.getElementById("block-edit-form");
